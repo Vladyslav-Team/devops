@@ -14,11 +14,11 @@ pipeline {
                 sh '''
                     chmod 744 ./mvnw
                     ./mvnw clean package
-                    mv ./target/provedcode*.jar ./provedcode.jar
-                    tar -cvzf provedcode-${BUILD_NUMBER}.tar.gz ./provedcode.jar
+                    mv ./target/UpTalentBackend*.jar ./UpTalentBackend.jar
+                    tar -cvzf UpTalentBackend-${BUILD_NUMBER}.tar.gz ./UpTalentBackend.jar
                 '''
                 withAWS(credentials: '${SERVER_CREDENTIALS}', region: '${REGION}') {
-                    s3Upload(file: 'provedcode-${BUILD_NUMBER}.tar.gz', bucket: '${BUCKET}')
+                    s3Upload(file: 'UpTalentBackend-${BUILD_NUMBER}.tar.gz', bucket: '${BUCKET}')
                 }
             }
         }
@@ -26,17 +26,17 @@ pipeline {
             agent { label 'java && target' }
             steps {
                 withAWS(credentials: '${SERVER_CREDENTIALS}', region: '${REGION}') {
-                    s3Download(file:'provedcode-${BUILD_NUMBER}.tar.gz', bucket:'${BUCKET}', path:'provedcode-${BUILD_NUMBER}.tar.gz')
+                    s3Download(file:'UpTalentBackend-${BUILD_NUMBER}.tar.gz', bucket:'${BUCKET}', path:'UpTalentBackend-${BUILD_NUMBER}.tar.gz')
                 }
                 sh '''
-                    sudo systemctl stop provedcode || true
+                    sudo systemctl stop UpTalentBackend || true
                     chmod 755 ./backend/install-systemd-service.sh
                     ./backend/install-systemd-service.sh
-                    tar xpvf provedcode-${BUILD_NUMBER}.tar.gz
-                    mv -f ./provedcode.jar ~/provedcode.jar
-                    chmod 755 ~/provedcode.jar
-                    rm provedcode-${BUILD_NUMBER}.tar.gz
-                    sudo systemctl start provedcode
+                    tar xpvf UpTalentBackend-${BUILD_NUMBER}.tar.gz
+                    mv -f ./UpTalentBackend.jar ~/UpTalentBackend.jar
+                    chmod 755 ~/UpTalentBackend.jar
+                    rm UpTalentBackend-${BUILD_NUMBER}.tar.gz
+                    sudo systemctl start UpTalentBackend
                 '''
             }
         }

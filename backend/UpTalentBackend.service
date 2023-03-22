@@ -1,11 +1,11 @@
 [Unit]
-Description=ProvedCode systemd service
+Description=UpTalentBackend systemd service
 DefaultDependencies=no
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=java -jar /var/lib/jenkins/provedcode.jar
+ExecStart=java -jar /var/lib/jenkins/UpTalentBackend.jar
 TimeoutStartSec=0
 RemainAfterExit=yes
 Restart=on-failure
