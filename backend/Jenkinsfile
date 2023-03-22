@@ -23,7 +23,7 @@ pipeline {
             }
         }
         stage('Deploy') {
-            agent { label 'java && target' }
+            agent { label 'java && target && Team-Vladyslav' }
             steps {
                 withAWS(credentials: '${SERVER_CREDENTIALS}', region: '${REGION}') {
                     s3Download(file:'UpTalentBackend-${BUILD_NUMBER}.tar.gz', bucket:'${BUCKET}', path:'UpTalentBackend-${BUILD_NUMBER}.tar.gz')
