@@ -10,7 +10,7 @@ pipeline {
         stage('Build') {
             agent { label 'java && jdk' }
             steps {
-                git branch: 'hotfix_backed_#9', url: 'https://github.com/Vladyslav-Team/backend.git'
+                git branch: 'dev', url: 'https://github.com/Vladyslav-Team/backend.git'
                 sh '''
                     export JAVA_HOME="/lib/jvm/jdk-17"
                     chmod 744 ./mvnw
