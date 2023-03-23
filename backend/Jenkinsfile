@@ -1,9 +1,9 @@
 pipeline {
     agent none
     environment {
-        SERVER_CREDENTIALS = 'creds'
-        WEBHOOK_URL = credentials('')
-        BUCKET = 'artifacts-s3'
+        SERVER_CREDENTIALS = 's3-access'
+        WEBHOOK_URL = credentials('DiscordWebhookVT')
+        BUCKET = 'vladyslav-team-bucket'
         REGION = 'eu-central-1'
     }
     stages {
@@ -12,33 +12,45 @@ pipeline {
             steps {
                 git branch: 'dev', url: 'https://github.com/Vladyslav-Team/backend.git'
                 sh '''
+                    export JAVA_HOME="/lib/jvm/jdk-17"
                     chmod 744 ./mvnw
                     ./mvnw clean package
-                    mv ./target/UpTalentBackend*.jar ./UpTalentBackend.jar
-                    tar -cvzf UpTalentBackend-${BUILD_NUMBER}.tar.gz ./UpTalentBackend.jar
+                    cp ./target/skillscope*.jar ./skillscope-${BUILD_NUMBER}.jar
                 '''
-                withAWS(credentials: '${SERVER_CREDENTIALS}', region: '${REGION}') {
-                    s3Upload(file: 'UpTalentBackend-${BUILD_NUMBER}.tar.gz', bucket: '${BUCKET}')
+                withAWS(credentials: "${SERVER_CREDENTIALS}", region: "${REGION}") {
+                    script {
+                        s3Upload(file: "./skillscope-${BUILD_NUMBER}.jar", bucket: "${BUCKET}", path:"backend/skillscope-${BUILD_NUMBER}.jar")
+                    }
                 }
+                sh 'rm ./skillscope-${BUILD_NUMBER}.jar'
             }
         }
         stage('Deploy') {
             agent { label 'java && target && Team-Vladyslav' }
             steps {
-                withAWS(credentials: '${SERVER_CREDENTIALS}', region: '${REGION}') {
-                    s3Download(file:'UpTalentBackend-${BUILD_NUMBER}.tar.gz', bucket:'${BUCKET}', path:'UpTalentBackend-${BUILD_NUMBER}.tar.gz')
+                withAWS(credentials: "${SERVER_CREDENTIALS}", region: "${REGION}") {
+                    script {
+                        s3Download(file:"./skillscope-${BUILD_NUMBER}.jar", bucket:"${BUCKET}", path:"backend/skillscope-${BUILD_NUMBER}.jar")
+                    }
                 }
                 sh '''
-                    sudo systemctl stop UpTalentBackend || true
+                    sudo systemctl stop skillscope || true
                     chmod 755 ./backend/install-systemd-service.sh
                     ./backend/install-systemd-service.sh
-                    tar xpvf UpTalentBackend-${BUILD_NUMBER}.tar.gz
-                    mv -f ./UpTalentBackend.jar ~/UpTalentBackend.jar
-                    chmod 755 ~/UpTalentBackend.jar
-                    rm UpTalentBackend-${BUILD_NUMBER}.tar.gz
-                    sudo systemctl start UpTalentBackend
+                    mv -f ./skillscope-${BUILD_NUMBER}.jar ~/skillscope.jar
+                    sudo systemctl enable skillscope --now
                 '''
             }
+        }
+    }
+    post {
+        always {
+            discordSend description: "Backend build status: ${currentBuild.currentResult}",
+                link: env.BUILD_URL,
+                result: currentBuild.currentResult,
+                title: JOB_NAME,
+                webhookURL: "${env.WEBHOOK_URL}"
+            echo "${env.WEBHOOK_URL}"
         }
     }
 }

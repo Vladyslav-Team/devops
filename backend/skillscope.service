@@ -1,11 +1,11 @@
 [Unit]
-Description=UpTalentBackend systemd service
+Description=skillscope systemd service
 DefaultDependencies=no
 After=network.target
 
 [Service]
 Type=simple
-ExecStart=java -jar /var/lib/jenkins/UpTalentBackend.jar
+ExecStart=java -jar /var/lib/jenkins/skillscope.jar
 TimeoutStartSec=0
 RemainAfterExit=yes
 Restart=on-failure
