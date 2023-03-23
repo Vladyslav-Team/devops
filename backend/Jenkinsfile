@@ -1,0 +1,56 @@
+pipeline {
+    agent none
+    environment {
+        SERVER_CREDENTIALS = 's3-access'
+        WEBHOOK_URL = credentials('DiscordWebhookVT')
+        BUCKET = 'vladyslav-team-bucket'
+        REGION = 'eu-central-1'
+    }
+    stages {
+        stage('Build') {
+            agent { label 'java && jdk' }
+            steps {
+                git branch: 'dev', url: 'https://github.com/Vladyslav-Team/backend.git'
+                sh '''
+                    export JAVA_HOME="/lib/jvm/jdk-17"
+                    chmod 744 ./mvnw
+                    ./mvnw clean package
+                    cp ./target/skillscope*.jar ./skillscope-${BUILD_NUMBER}.jar
+                '''
+                withAWS(credentials: "${SERVER_CREDENTIALS}", region: "${REGION}") {
+                    script {
+                        s3Upload(file: "./skillscope-${BUILD_NUMBER}.jar", bucket: "${BUCKET}", path:"backend/skillscope-${BUILD_NUMBER}.jar")
+                    }
+                }
+                sh 'rm ./skillscope-${BUILD_NUMBER}.jar'
+            }
+        }
+        stage('Deploy') {
+            agent { label 'java && target && Team-Vladyslav' }
+            steps {
+                withAWS(credentials: "${SERVER_CREDENTIALS}", region: "${REGION}") {
+                    script {
+                        s3Download(file:"./skillscope-${BUILD_NUMBER}.jar", bucket:"${BUCKET}", path:"backend/skillscope-${BUILD_NUMBER}.jar")
+                    }
+                }
+                sh '''
+                    sudo systemctl stop skillscope || true
+                    chmod 755 ./backend/install-systemd-service.sh
+                    ./backend/install-systemd-service.sh
+                    mv -f ./skillscope-${BUILD_NUMBER}.jar ~/skillscope.jar
+                    sudo systemctl enable skillscope --now
+                '''
+            }
+        }
+    }
+    post {
+        always {
+            discordSend description: "Backend build status: ${currentBuild.currentResult}",
+                link: env.BUILD_URL,
+                result: currentBuild.currentResult,
+                title: JOB_NAME,
+                webhookURL: "${env.WEBHOOK_URL}"
+            echo "${env.WEBHOOK_URL}"
+        }
+    }
+}
