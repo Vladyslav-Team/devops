@@ -1,0 +1,57 @@
+pipeline {
+    agent { label 'frontend' }
+    environment {
+        SERVER_CREDENTIALS = 's3-access'
+        WEBHOOK_URL = credentials('DiscordWebhookVT')
+        BUCKET = 'vladyslav-team-bucket'
+    }
+    stages {
+        stage('clone') {
+            steps {
+                git branch: 'dev', url: 'https://github.com/Vladyslav-Team/frontend.git'
+            }
+        }
+        stage('build') {
+            steps {
+                sh '''
+                cd frontend
+                npm install 
+                npm run build
+                chmod -R 755 ./build/*
+                '''
+            }
+        }
+        stage('deploy') {
+            steps {
+                sh '''
+                    ssh -i "/home/jenkins/.ssh/slave-SoftServe2023" vladyslav-team@172.31.117.224 "rm -rf /var/www/vladyslav-team/html/*"
+                    scp -i "/home/jenkins/.ssh/SoftServe2023.pem" -rp ./frontend/build/* vladyslav-team@172.31.117.224:/var/www/vladyslav-team/html/
+                '''
+            }
+        }
+        stage('upload to s3') {
+            steps {
+                withAWS(credentials: "${SERVER_CREDENTIALS}", region: 'eu-central-1') {
+                    script {
+                        println 'Uploading artifacts...'
+                        sh '''
+                        cd ./frontend/build/
+                        tar -cvzf "build-${BUILD_NUMBER}.tar.gz" ./*
+                        '''
+                        s3Upload(file: "./frontend/build/build-${BUILD_NUMBER}.tar.gz", bucket: "${BUCKET}", path:"frontend/")
+                    }
+                }
+            }
+        }
+    }
+    post {
+        always {
+            discordSend description: "Jenkins pipeline build: ${currentBuild.currentResult}",
+                link: env.BUILD_URL,
+                result: currentBuild.currentResult,
+                title: JOB_NAME,
+                webhookURL: "${env.WEBHOOK_URL}"
+            echo "${env.WEBHOOK_URL}"
+        }
+    }
+}
