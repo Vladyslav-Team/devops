@@ -14,7 +14,6 @@ pipeline {
         stage('build') {
             steps {
                 sh '''
-                cd frontend
                 npm install 
                 npm run build
                 chmod -R 755 ./build/*
@@ -25,7 +24,7 @@ pipeline {
             steps {
                 sh '''
                     ssh -i "/home/jenkins/.ssh/slave-SoftServe2023" vladyslav-team@172.31.117.224 "rm -rf /var/www/vladyslav-team/html/*"
-                    scp -i "/home/jenkins/.ssh/SoftServe2023.pem" -rp ./frontend/build/* vladyslav-team@172.31.117.224:/var/www/vladyslav-team/html/
+                    scp -i "/home/jenkins/.ssh/SoftServe2023.pem" -rp ./build/* vladyslav-team@172.31.117.224:/var/www/vladyslav-team/html/
                 '''
             }
         }
@@ -35,10 +34,10 @@ pipeline {
                     script {
                         println 'Uploading artifacts...'
                         sh '''
-                        cd ./frontend/build/
+                        cd ./build/
                         tar -cvzf "build-${BUILD_NUMBER}.tar.gz" ./*
                         '''
-                        s3Upload(file: "./frontend/build/build-${BUILD_NUMBER}.tar.gz", bucket: "${BUCKET}", path:"frontend/")
+                        s3Upload(file: "./build/build-${BUILD_NUMBER}.tar.gz", bucket: "${BUCKET}", path:"frontend/")
                     }
                 }
             }
