@@ -5,6 +5,10 @@ pipeline {
         WEBHOOK_URL = credentials('DiscordWebhookVT')
         BUCKET = 'vladyslav-team-bucket'
         REGION = 'eu-central-1'
+        BACKEND_ACCESS_KEY = 'vt_backend_access_key'
+        BACKEND_SECRET_KEY = 'vt_backend_secret_key'
+        DATABASE_URL = 'vt_database_url'
+        DATABASE_PASSWORD = 'vt_database_password'
     }
     stages {
         stage('Build') {
@@ -13,6 +17,16 @@ pipeline {
                 git branch: 'dev', url: 'https://github.com/Vladyslav-Team/backend.git'
                 sh '''
                     export JAVA_HOME="/lib/jvm/jdk-17"
+
+                    export BUCKET="vladyslav-team-backend"
+                    export S3_ACCESS_KEY=$(aws ssm get-parameter --region ${REGION} --name ${BACKEND_ACCESS_KEY} --with-decryption --query Parameter.Value --output text)
+                    export S3_SECRET_KEY=$(aws ssm get-parameter --region ${REGION} --name ${BACKEND_SECRET_KEY} --with-decryption --query Parameter.Value --output text)
+                    export S3_REGION=${REGION}
+
+                    export DB_LOGIN="vt"
+                    export DB_PASSWORD=$(aws ssm get-parameter --region ${REGION} --name ${DATABASE_PASSWORD} --with-decryption --query Parameter.Value --output text)
+                    export DB_URL=$(aws ssm get-parameter --region ${REGION} --name ${DATABASE_URL} --with-decryption --query Parameter.Value --output text)
+
                     chmod 744 ./mvnw
                     rm -f .env
                     echo "SPRING_PROFILES_ACTIVE=prod" >> .env
