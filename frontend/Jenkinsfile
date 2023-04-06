@@ -25,8 +25,8 @@ pipeline {
         stage('deploy') {
             steps {
                 sh '''
-                    ssh -i "/home/jenkins/.ssh/slave-SoftServe2023" vladyslav-team@172.31.117.224 "rm -rf /var/www/vladyslav-team-production/html/*"
-                    scp -i "/home/jenkins/.ssh/slave-SoftServe2023" -rp ./build/* vladyslav-team@172.31.117.224:/var/www/vladyslav-team-production/html/
+                    ssh -i "/home/jenkins/.ssh/slave-SoftServe2023" vladyslav-team@10.0.1.250 "rm -rf /var/www/vladyslav-team-production/html/*"
+                    scp -i "/home/jenkins/.ssh/slave-SoftServe2023" -rp ./build/* vladyslav-team@10.0.1.250:/var/www/vladyslav-team-production/html/
                 '''
             }
         }
@@ -52,7 +52,7 @@ pipeline {
                 result: currentBuild.currentResult,
                 title: JOB_NAME,
                 webhookURL: "${env.WEBHOOK_URL}"
-            echo "${env.WEBHOOK_URL}"
+            sh 'rm -rf ./*'
         }
     }
 }
