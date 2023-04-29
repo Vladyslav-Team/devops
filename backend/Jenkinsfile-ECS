@@ -2,7 +2,7 @@ pipeline {
     agent none
     environment {
         SERVER_CREDENTIALS = 's3-access'
-        BUCKET_NAME = 'vladyslav-team-bucket'
+        BUCKET = 'vladyslav-team-bucket'
         REGION = 'eu-central-1'
         BACKEND_ACCESS_KEY = credentials('vt_backend_access_key')
         BACKEND_SECRET_KEY = credentials('vt_backend_secret_key')
@@ -34,7 +34,7 @@ pipeline {
                     rm -f .env
                     export JAVA_HOME="/opt/java/openjdk"
 
-                    export BUCKET=${BUCKET_NAME}
+                    export BUCKET="vladyslav-team-backend"
                     export S3_ACCESS_KEY=${BACKEND_ACCESS_KEY}
                     export S3_SECRET_KEY=${BACKEND_SECRET_KEY}
                     export S3_REGION=${REGION}
