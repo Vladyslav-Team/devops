@@ -11,6 +11,7 @@ pipeline {
         DATABASE_PASSWORD = credentials('vt_database_password')
         WEBHOOK_URL = credentials('DiscordWebhookVT')
 
+        EC2_FRONTEND_ID=credentials('EC2-frontend-id')
         EC2_BACKEND_ID=credentials('EC2-backend-id')
 
     }
@@ -25,6 +26,7 @@ pipeline {
                         while (retryCount) {
                             try {
                                 sh('aws ec2 start-instances --instance-ids ${EC2_BACKEND_ID}')
+                                sh('aws ec2 start-instances --instance-ids ${EC2_FRONTEND_ID}')
                                 break
                             } catch (err) { 
                                 echo("${err}")
@@ -97,6 +99,7 @@ pipeline {
                         
                         if (time >= "23:00" || time < "11:00") {
                             sleep(time: 300)
+                            sh('aws ec2 start-instances --instance-ids ${EC2_FRONTEND_ID}')
                             sh('aws ec2 stop-instances --instance-ids ${EC2_BACKEND_ID}')
                         }
                     }
