@@ -20,7 +20,7 @@ pipeline {
             agent { label 'master' }
             steps {
                 script {
-                    def computer = Jenkins.getInstance().getComputer('Frontend Server (Main and Dev) (Debian)')
+                    def computer = Jenkins.getInstance().getComputer('Backend Server (Dev) (Debian)')
                     def retryCount = 5
                     while (retryCount) {
                         echo("Number of tries:${retryCount}")
@@ -93,7 +93,7 @@ pipeline {
 
             script {
                 node(label: 'master') {
-                def computer = Jenkins.getInstance().getComputer('Frontend Server (Main and Dev) (Debian)')
+                def computer = Jenkins.getInstance().getComputer('Backend Server (Dev) (Debian)')
                 if (computer.isOnline()) {
                     def timeZone = TimeZone.getTimeZone("Europe/Kiev")
                     def time = new Date().format("HH:mm", timezone=timeZone)
